@@ -20,6 +20,7 @@ return new class extends Migration
             DROP FUNCTION IF EXISTS fn_trg_recalcular_total_pedido();
             DROP PROCEDURE IF EXISTS sp_cancelar_pedido(bigint);
             DROP PROCEDURE IF EXISTS sp_aplicar_cupom(bigint, varchar);
+            DROP FUNCTION IF EXISTS fn_taxa_entrega(varchar);
             DROP FUNCTION IF EXISTS fn_calcular_desconto_cupom(bigint, numeric, bigint);
             DROP FUNCTION IF EXISTS fn_subtotal_pedido(bigint);
             DROP INDEX IF EXISTS idx_pedidos_abertos_data;

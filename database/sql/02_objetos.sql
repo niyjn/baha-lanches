@@ -85,6 +85,29 @@ BEGIN
 END;
 $$;
 
+-- Taxa de entrega do bairro, conforme o grupo de distância em relação ao restaurante
+CREATE OR REPLACE FUNCTION fn_taxa_entrega(p_bairro varchar)
+RETURNS numeric
+LANGUAGE plpgsql
+STABLE
+SET search_path FROM CURRENT
+AS $$
+DECLARE
+    v_taxa numeric;
+BEGIN
+    SELECT g.valor_unitario INTO v_taxa
+    FROM bairros_entrega b
+    JOIN grupos_entrega g ON g.id = b.grupo_entrega_id
+    WHERE b.bairro = p_bairro;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Não há entrega para o bairro %', p_bairro;
+    END IF;
+
+    RETURN v_taxa;
+END;
+$$;
+
 -- =====================================================================
 -- Stored procedures
 -- =====================================================================
@@ -111,6 +134,10 @@ BEGIN
 
     IF v_pedido.cupom_id IS NOT NULL THEN
         RAISE EXCEPTION 'Pedido % já possui cupom', p_pedido_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pagamentos WHERE pedido_id = p_pedido_id) THEN
+        RAISE EXCEPTION 'Pedido % já tem pagamento e não aceita cupom', p_pedido_id;
     END IF;
 
     SELECT id INTO v_cupom_id FROM cupons WHERE codigo = upper(p_codigo);
@@ -198,6 +225,10 @@ BEGIN
 
     IF v_pedido.status IN ('ENTREGUE', 'CANCELADO') THEN
         RAISE EXCEPTION 'Pedido % já está encerrado (%) e não aceita alterações nos itens', v_pedido_id, v_pedido.status;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pagamentos WHERE pedido_id = v_pedido_id) THEN
+        RAISE EXCEPTION 'Pedido % já tem pagamento e não aceita alterações nos itens', v_pedido_id;
     END IF;
 
     v_subtotal := fn_subtotal_pedido(v_pedido_id);
