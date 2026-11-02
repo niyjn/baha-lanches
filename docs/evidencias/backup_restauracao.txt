@@ -1,0 +1,81 @@
+Backup e restauração do banco Baha Lanches
+Data: 2026-11-01
+Ferramenta: pg_dump (PostgreSQL) 18.6
+
+Origem: branch principal do banco no Neon (banco baha_lanches_DB, schema baha_lanches)
+Destino: banco temporário baha_lanches_restore, criado vazio em outra branch do Neon
+
+1. Backup
+   pg_dump --no-owner --no-privileges --clean --if-exists --schema=baha_lanches --file=database/backups/baha_lanches_2026-11-01.sql
+
+2. Restauração
+   CREATE DATABASE baha_lanches_restore;
+   psql --set=ON_ERROR_STOP=1 --file=database/backups/baha_lanches_2026-11-01.sql
+   Concluída sem erros em 41.6 segundos.
+
+3. Verificação
+   psql --file=database/sql/05_verificar_restauracao.sql, no banco original e no restaurado.
+   Resultado: as duas saídas são idênticas, inclusive o md5 do conteúdo de cada tabela.
+
+Saída no banco restaurado:
+
+--- Tabelas: linhas e md5 do conteúdo
+     tabela      | linhas |               md5                
+-----------------+--------+----------------------------------
+ avaliacoes      | 243    | 02ad82a877ad8107ba1c3c78bc9171e4
+ bairros_entrega | 22     | 28c1417480b6dd47a11793641ad2f272
+ categorias      | 6      | e1bf8aa8c0c4d103205322d436bbada5
+ clientes        | 80     | 5758ce5d1da8d38357b854957ff981e9
+ cupons          | 10     | d3598ab65e46b45d4c9982074b7aef75
+ enderecos       | 120    | c9a8a9a2284a59c597c320f7ce6d050c
+ grupos_entrega  | 4      | 0bb5ca0ac14884a12544128fd7707025
+ ingredientes    | 12     | 7d6db37cdf0b76a19796c743f0e9c71a
+ item_adicionais | 237    | 0f04a3f2451e2d8eb90ec44b6c0bfb01
+ itens_pedido    | 1047   | ba75a819830c3855458b7c0a48a109ce
+ migrations      | 15     | ac7e56c0f27858f23da41ba4ac652d47
+ pagamentos      | 480    | 5f718232ff306da5f770bc20de446877
+ pedidos         | 480    | fe1c50c8450ca4a85e7813f9c152c41f
+ produtos        | 31     | 6482ec7fe9fa36a043c2066eb69eb288
+(14 linhas)
+
+--- Functions e procedures
+              nome              |   tipo    
+--------------------------------+-----------
+ fn_calcular_desconto_cupom     | function
+ fn_subtotal_pedido             | function
+ fn_taxa_entrega                | function
+ fn_trg_recalcular_total_pedido | function
+ fn_trg_validar_status_pedido   | function
+ sp_aplicar_cupom               | procedure
+ sp_cancelar_pedido             | procedure
+(7 linhas)
+
+--- Triggers
+     tabela      |             trigger             
+-----------------+---------------------------------
+ item_adicionais | trg_adicionais_recalcular_total
+ itens_pedido    | trg_itens_recalcular_total
+ pedidos         | trg_pedidos_validar_status
+(3 linhas)
+
+--- Índices criados para o sistema
+    tabela    |               indice               
+--------------+------------------------------------
+ enderecos    | uq_enderecos_cliente_principal
+ itens_pedido | idx_gabriel_id_pedido_itens_pedido
+ pedidos      | idx_gabriel_data_pedido_pedidos
+ pedidos      | idx_gabriel_id_cliente_pedidos
+ pedidos      | idx_pedidos_abertos_data
+(5 linhas)
+
+--- Objetos em uso
+ pedidos_com_subtotal_divergente 
+---------------------------------
+                               0
+(1 linha)
+
+ taxa_centro | taxa_vila_jordao 
+-------------+------------------
+        6.00 |             9.00
+(1 linha)
+
