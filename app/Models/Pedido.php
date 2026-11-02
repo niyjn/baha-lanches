@@ -44,9 +44,9 @@ class Pedido extends Model
         return $this->hasMany(ItemPedido::class);
     }
 
-    public function pagamentos(): HasMany
+    public function pagamento(): HasOne
     {
-        return $this->hasMany(Pagamento::class);
+        return $this->hasOne(Pagamento::class);
     }
 
     public function avaliacao(): HasOne
