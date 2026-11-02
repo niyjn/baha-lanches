@@ -1,5 +1,5 @@
 -- Estrutura completa do banco (tabelas, índices, functions, procedures e triggers).
--- Gerado com pg_dump a partir da production. Rodar antes do 03_dados.sql.
+-- Gerado com pg_dump. Rodar antes do 03_dados.sql.
 
 --
 -- PostgreSQL database dump
@@ -92,6 +92,31 @@ $$;
 
 
 --
+-- Name: fn_taxa_entrega(character varying); Type: FUNCTION; Schema: baha_lanches; Owner: -
+--
+
+CREATE FUNCTION baha_lanches.fn_taxa_entrega(p_bairro character varying) RETURNS numeric
+    LANGUAGE plpgsql STABLE
+    SET search_path TO 'baha_lanches'
+    AS $$
+DECLARE
+    v_taxa numeric;
+BEGIN
+    SELECT g.valor_unitario INTO v_taxa
+    FROM bairros_entrega b
+    JOIN grupos_entrega g ON g.id = b.grupo_entrega_id
+    WHERE b.bairro = p_bairro;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Não há entrega para o bairro %', p_bairro;
+    END IF;
+
+    RETURN v_taxa;
+END;
+$$;
+
+
+--
 -- Name: fn_trg_recalcular_total_pedido(); Type: FUNCTION; Schema: baha_lanches; Owner: -
 --
 
@@ -121,6 +146,10 @@ BEGIN
 
     IF v_pedido.status IN ('ENTREGUE', 'CANCELADO') THEN
         RAISE EXCEPTION 'Pedido % já está encerrado (%) e não aceita alterações nos itens', v_pedido_id, v_pedido.status;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pagamentos WHERE pedido_id = v_pedido_id) THEN
+        RAISE EXCEPTION 'Pedido % já tem pagamento e não aceita alterações nos itens', v_pedido_id;
     END IF;
 
     v_subtotal := fn_subtotal_pedido(v_pedido_id);
@@ -185,6 +214,10 @@ BEGIN
 
     IF v_pedido.cupom_id IS NOT NULL THEN
         RAISE EXCEPTION 'Pedido % já possui cupom', p_pedido_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pagamentos WHERE pedido_id = p_pedido_id) THEN
+        RAISE EXCEPTION 'Pedido % já tem pagamento e não aceita cupom', p_pedido_id;
     END IF;
 
     SELECT id INTO v_cupom_id FROM cupons WHERE codigo = upper(p_codigo);
@@ -282,6 +315,38 @@ CREATE SEQUENCE baha_lanches.avaliacoes_id_seq
 --
 
 ALTER SEQUENCE baha_lanches.avaliacoes_id_seq OWNED BY baha_lanches.avaliacoes.id;
+
+
+--
+-- Name: bairros_entrega; Type: TABLE; Schema: baha_lanches; Owner: -
+--
+
+CREATE TABLE baha_lanches.bairros_entrega (
+    id bigint NOT NULL,
+    bairro character varying(80) NOT NULL,
+    grupo_entrega_id bigint NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
+);
+
+
+--
+-- Name: bairros_entrega_id_seq; Type: SEQUENCE; Schema: baha_lanches; Owner: -
+--
+
+CREATE SEQUENCE baha_lanches.bairros_entrega_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bairros_entrega_id_seq; Type: SEQUENCE OWNED BY; Schema: baha_lanches; Owner: -
+--
+
+ALTER SEQUENCE baha_lanches.bairros_entrega_id_seq OWNED BY baha_lanches.bairros_entrega.id;
 
 
 --
@@ -407,7 +472,7 @@ CREATE TABLE baha_lanches.enderecos (
     complemento character varying(100),
     bairro character varying(80) NOT NULL,
     cidade character varying(80) NOT NULL,
-    estado character(2) DEFAULT 'SP'::bpchar NOT NULL,
+    estado character(2) DEFAULT 'PR'::bpchar NOT NULL,
     cep character varying(10) NOT NULL,
     ponto_referencia character varying(150),
     e_principal boolean DEFAULT false NOT NULL,
@@ -433,6 +498,39 @@ CREATE SEQUENCE baha_lanches.enderecos_id_seq
 --
 
 ALTER SEQUENCE baha_lanches.enderecos_id_seq OWNED BY baha_lanches.enderecos.id;
+
+
+--
+-- Name: grupos_entrega; Type: TABLE; Schema: baha_lanches; Owner: -
+--
+
+CREATE TABLE baha_lanches.grupos_entrega (
+    id bigint NOT NULL,
+    nome_grupo character varying(30) NOT NULL,
+    valor_unitario numeric(10,2) NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    CONSTRAINT grupos_entrega_valor_unitario_check CHECK ((valor_unitario >= (0)::numeric))
+);
+
+
+--
+-- Name: grupos_entrega_id_seq; Type: SEQUENCE; Schema: baha_lanches; Owner: -
+--
+
+CREATE SEQUENCE baha_lanches.grupos_entrega_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: grupos_entrega_id_seq; Type: SEQUENCE OWNED BY; Schema: baha_lanches; Owner: -
+--
+
+ALTER SEQUENCE baha_lanches.grupos_entrega_id_seq OWNED BY baha_lanches.grupos_entrega.id;
 
 
 --
@@ -706,6 +804,13 @@ ALTER TABLE ONLY baha_lanches.avaliacoes ALTER COLUMN id SET DEFAULT nextval('ba
 
 
 --
+-- Name: bairros_entrega id; Type: DEFAULT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.bairros_entrega ALTER COLUMN id SET DEFAULT nextval('baha_lanches.bairros_entrega_id_seq'::regclass);
+
+
+--
 -- Name: categorias id; Type: DEFAULT; Schema: baha_lanches; Owner: -
 --
 
@@ -731,6 +836,13 @@ ALTER TABLE ONLY baha_lanches.cupons ALTER COLUMN id SET DEFAULT nextval('baha_l
 --
 
 ALTER TABLE ONLY baha_lanches.enderecos ALTER COLUMN id SET DEFAULT nextval('baha_lanches.enderecos_id_seq'::regclass);
+
+
+--
+-- Name: grupos_entrega id; Type: DEFAULT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.grupos_entrega ALTER COLUMN id SET DEFAULT nextval('baha_lanches.grupos_entrega_id_seq'::regclass);
 
 
 --
@@ -799,6 +911,22 @@ ALTER TABLE ONLY baha_lanches.avaliacoes
 
 
 --
+-- Name: bairros_entrega bairros_entrega_bairro_unique; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.bairros_entrega
+    ADD CONSTRAINT bairros_entrega_bairro_unique UNIQUE (bairro);
+
+
+--
+-- Name: bairros_entrega bairros_entrega_pkey; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.bairros_entrega
+    ADD CONSTRAINT bairros_entrega_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: categorias categorias_nome_unique; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
 --
 
@@ -863,6 +991,22 @@ ALTER TABLE ONLY baha_lanches.enderecos
 
 
 --
+-- Name: grupos_entrega grupos_entrega_nome_grupo_unique; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.grupos_entrega
+    ADD CONSTRAINT grupos_entrega_nome_grupo_unique UNIQUE (nome_grupo);
+
+
+--
+-- Name: grupos_entrega grupos_entrega_pkey; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.grupos_entrega
+    ADD CONSTRAINT grupos_entrega_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: ingredientes ingredientes_nome_unique; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
 --
 
@@ -900,6 +1044,14 @@ ALTER TABLE ONLY baha_lanches.itens_pedido
 
 ALTER TABLE ONLY baha_lanches.migrations
     ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pagamentos pagamentos_pedido_id_unique; Type: CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.pagamentos
+    ADD CONSTRAINT pagamentos_pedido_id_unique UNIQUE (pedido_id);
 
 
 --
@@ -996,6 +1148,14 @@ ALTER TABLE ONLY baha_lanches.avaliacoes
 
 ALTER TABLE ONLY baha_lanches.avaliacoes
     ADD CONSTRAINT avaliacoes_pedido_id_foreign FOREIGN KEY (pedido_id) REFERENCES baha_lanches.pedidos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: bairros_entrega bairros_entrega_grupo_entrega_id_foreign; Type: FK CONSTRAINT; Schema: baha_lanches; Owner: -
+--
+
+ALTER TABLE ONLY baha_lanches.bairros_entrega
+    ADD CONSTRAINT bairros_entrega_grupo_entrega_id_foreign FOREIGN KEY (grupo_entrega_id) REFERENCES baha_lanches.grupos_entrega(id);
 
 
 --
