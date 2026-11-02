@@ -1,0 +1,263 @@
+Planos de execução sem e com os índices
+Data: 2026-11-01
+Executado com database/sql/06_explain_indices.sql no banco restaurado, em transação desfeita no final.
+
+Resumo do tempo de execução em volume simulado (seção 3 sem índice, seção 4 com índice):
+  idx_pedidos_abertos_data            10,013 ms -> 0,104 ms
+  idx_gabriel_data_pedido_pedidos      5,098 ms -> 0,217 ms
+  idx_gabriel_id_cliente_pedidos       5,240 ms -> 0,730 ms
+  idx_gabriel_id_pedido_itens_pedido   8,869 ms -> 0,057 ms
+
+Com os dados reais (480 pedidos) a diferença é mínima, e o PostgreSQL mantém a leitura sequencial na consulta de pedidos em aberto, porque a tabela é pequena.
+
+==============================================================
+1. Dados reais, SEM os índices
+==============================================================
+> idx_pedidos_abertos_data: pedidos em aberto, do mais antigo para o mais novo
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Limit (actual time=0.082..0.088 rows=50.00 loops=1)
+   Buffers: shared hit=9
+   ->  Sort (actual time=0.081..0.083 rows=50.00 loops=1)
+         Sort Key: data_pedido
+         Sort Method: quicksort  Memory: 30kB
+         Buffers: shared hit=9
+         ->  Seq Scan on pedidos (actual time=0.010..0.065 rows=83.00 loops=1)
+               Filter: ((status)::text = ANY ('{RECEBIDO,EM_PREPARO,PRONTO,SAIU_PARA_ENTREGA}'::text[]))
+               Rows Removed by Filter: 397
+               Buffers: shared hit=9
+ Planning:
+   Buffers: shared hit=40
+ Planning Time: 0.134 ms
+ Execution Time: 0.139 ms
+(14 linhas)
+
+> idx_gabriel_data_pedido_pedidos: pedidos de um período
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on pedidos (actual time=0.016..0.044 rows=25.00 loops=1)
+   Filter: ((data_pedido >= '2024-01-01 00:00:00+00'::timestamp with time zone) AND (data_pedido < '2024-01-08 00:00:00+00'::timestamp with time zone))
+   Rows Removed by Filter: 455
+   Buffers: shared hit=9
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.074 ms
+ Execution Time: 0.062 ms
+(8 linhas)
+
+> idx_gabriel_id_cliente_pedidos: pedidos de um cliente
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Seq Scan on pedidos (actual time=0.012..0.075 rows=11.00 loops=1)
+   Filter: (cliente_id = 1)
+   Rows Removed by Filter: 469
+   Buffers: shared hit=9
+ Planning:
+   Buffers: shared hit=8
+ Planning Time: 0.069 ms
+ Execution Time: 0.093 ms
+(8 linhas)
+
+> idx_gabriel_id_pedido_itens_pedido: itens de um pedido
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Seq Scan on itens_pedido (actual time=0.010..0.068 rows=2.00 loops=1)
+   Filter: (pedido_id = 1)
+   Rows Removed by Filter: 1045
+   Buffers: shared hit=24
+ Planning:
+   Buffers: shared hit=18
+ Planning Time: 0.103 ms
+ Execution Time: 0.086 ms
+(8 linhas)
+
+==============================================================
+2. Dados reais, COM os índices
+==============================================================
+> idx_pedidos_abertos_data: pedidos em aberto, do mais antigo para o mais novo
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Limit (actual time=0.085..0.091 rows=50.00 loops=1)
+   Buffers: shared hit=9
+   ->  Sort (actual time=0.084..0.087 rows=50.00 loops=1)
+         Sort Key: data_pedido
+         Sort Method: quicksort  Memory: 30kB
+         Buffers: shared hit=9
+         ->  Seq Scan on pedidos (actual time=0.011..0.068 rows=83.00 loops=1)
+               Filter: ((status)::text = ANY ('{RECEBIDO,EM_PREPARO,PRONTO,SAIU_PARA_ENTREGA}'::text[]))
+               Rows Removed by Filter: 397
+               Buffers: shared hit=9
+ Planning:
+   Buffers: shared hit=16 read=3
+ Planning Time: 0.234 ms
+ Execution Time: 0.113 ms
+(14 linhas)
+
+> idx_gabriel_data_pedido_pedidos: pedidos de um período
+                                                                            QUERY PLAN                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on pedidos (actual time=0.068..0.079 rows=25.00 loops=1)
+   Recheck Cond: ((data_pedido >= '2024-01-01 00:00:00+00'::timestamp with time zone) AND (data_pedido < '2024-01-08 00:00:00+00'::timestamp with time zone))
+   Heap Blocks: exact=8
+   Buffers: shared hit=8 read=2
+   ->  Bitmap Index Scan on idx_gabriel_data_pedido_pedidos (actual time=0.057..0.057 rows=25.00 loops=1)
+         Index Cond: ((data_pedido >= '2024-01-01 00:00:00+00'::timestamp with time zone) AND (data_pedido < '2024-01-08 00:00:00+00'::timestamp with time zone))
+         Index Searches: 1
+         Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.101 ms
+ Execution Time: 0.102 ms
+(12 linhas)
+
+> idx_gabriel_id_cliente_pedidos: pedidos de um cliente
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on pedidos (actual time=0.070..0.079 rows=11.00 loops=1)
+   Recheck Cond: (cliente_id = 1)
+   Heap Blocks: exact=7
+   Buffers: shared hit=10 read=1
+   ->  Bitmap Index Scan on idx_gabriel_id_cliente_pedidos (actual time=0.060..0.060 rows=11.00 loops=1)
+         Index Cond: (cliente_id = 1)
+         Index Searches: 1
+         Buffers: shared hit=3 read=1
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.091 ms
+ Execution Time: 0.099 ms
+(12 linhas)
+
+> idx_gabriel_id_pedido_itens_pedido: itens de um pedido
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_gabriel_id_pedido_itens_pedido on itens_pedido (actual time=0.025..0.026 rows=2.00 loops=1)
+   Index Cond: (pedido_id = 1)
+   Index Searches: 1
+   Buffers: shared hit=1 read=2
+ Planning:
+   Buffers: shared hit=21 read=1
+ Planning Time: 0.138 ms
+ Execution Time: 0.045 ms
+(8 linhas)
+
+==============================================================
+3. Volume simulado (+100 mil pedidos e +200 mil itens), SEM os índices
+==============================================================
+> idx_pedidos_abertos_data: pedidos em aberto, do mais antigo para o mais novo
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Limit (actual time=9.977..9.988 rows=50.00 loops=1)
+   Buffers: shared hit=1244
+   ->  Sort (actual time=9.976..9.982 rows=50.00 loops=1)
+         Sort Key: data_pedido
+         Sort Method: top-N heapsort  Memory: 31kB
+         Buffers: shared hit=1244
+         ->  Seq Scan on pedidos (actual time=0.011..9.856 rows=1083.00 loops=1)
+               Filter: ((status)::text = ANY ('{RECEBIDO,EM_PREPARO,PRONTO,SAIU_PARA_ENTREGA}'::text[]))
+               Rows Removed by Filter: 99397
+               Buffers: shared hit=1244
+ Planning:
+   Buffers: shared hit=26
+ Planning Time: 0.111 ms
+ Execution Time: 10.013 ms
+(14 linhas)
+
+> idx_gabriel_data_pedido_pedidos: pedidos de um período
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on pedidos (actual time=0.018..5.052 rows=529.00 loops=1)
+   Filter: ((data_pedido >= '2024-01-01 00:00:00+00'::timestamp with time zone) AND (data_pedido < '2024-01-08 00:00:00+00'::timestamp with time zone))
+   Rows Removed by Filter: 99951
+   Buffers: shared hit=1244
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.075 ms
+ Execution Time: 5.098 ms
+(8 linhas)
+
+> idx_gabriel_id_cliente_pedidos: pedidos de um cliente
+                             QUERY PLAN                             
+--------------------------------------------------------------------
+ Seq Scan on pedidos (actual time=0.013..5.180 rows=844.00 loops=1)
+   Filter: (cliente_id = 1)
+   Rows Removed by Filter: 99636
+   Buffers: shared hit=1244
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.078 ms
+ Execution Time: 5.240 ms
+(8 linhas)
+
+> idx_gabriel_id_pedido_itens_pedido: itens de um pedido
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Seq Scan on itens_pedido (actual time=0.011..8.846 rows=2.00 loops=1)
+   Filter: (pedido_id = 1)
+   Rows Removed by Filter: 201045
+   Buffers: shared hit=1883
+ Planning:
+   Buffers: shared hit=35
+ Planning Time: 0.094 ms
+ Execution Time: 8.869 ms
+(8 linhas)
+
+==============================================================
+4. Volume simulado, COM os índices
+==============================================================
+> idx_pedidos_abertos_data: pedidos em aberto, do mais antigo para o mais novo
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ Limit (actual time=0.026..0.085 rows=50.00 loops=1)
+   Buffers: shared hit=50 read=2
+   ->  Index Scan using idx_pedidos_abertos_data on pedidos (actual time=0.025..0.081 rows=50.00 loops=1)
+         Index Searches: 1
+         Buffers: shared hit=50 read=2
+ Planning:
+   Buffers: shared hit=20 read=3
+ Planning Time: 0.224 ms
+ Execution Time: 0.104 ms
+(9 linhas)
+
+> idx_gabriel_data_pedido_pedidos: pedidos de um período
+                                                                         QUERY PLAN                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_gabriel_data_pedido_pedidos on pedidos (actual time=0.057..0.182 rows=529.00 loops=1)
+   Index Cond: ((data_pedido >= '2024-01-01 00:00:00+00'::timestamp with time zone) AND (data_pedido < '2024-01-08 00:00:00+00'::timestamp with time zone))
+   Index Searches: 1
+   Buffers: shared hit=53 read=3
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.082 ms
+ Execution Time: 0.217 ms
+(8 linhas)
+
+> idx_gabriel_id_cliente_pedidos: pedidos de um cliente
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on pedidos (actual time=0.155..0.675 rows=844.00 loops=1)
+   Recheck Cond: (cliente_id = 1)
+   Heap Blocks: exact=840
+   Buffers: shared hit=840 read=2
+   ->  Bitmap Index Scan on idx_gabriel_id_cliente_pedidos (actual time=0.088..0.088 rows=844.00 loops=1)
+         Index Cond: (cliente_id = 1)
+         Index Searches: 1
+         Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.095 ms
+ Execution Time: 0.730 ms
+(12 linhas)
+
+> idx_gabriel_id_pedido_itens_pedido: itens de um pedido
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_gabriel_id_pedido_itens_pedido on itens_pedido (actual time=0.036..0.037 rows=2.00 loops=1)
+   Index Cond: (pedido_id = 1)
+   Index Searches: 1
+   Buffers: shared hit=1 read=3
+ Planning:
+   Buffers: shared hit=30 read=1
+ Planning Time: 0.156 ms
+ Execution Time: 0.057 ms
+(8 linhas)
+
