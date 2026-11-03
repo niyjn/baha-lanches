@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('titulo', 'Baha Lanches')</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
     <nav>
         <a href="{{ route('pedidos.index') }}">Pedidos</a>
         <a href="{{ route('clientes.index') }}">Clientes</a>
@@ -30,7 +31,7 @@
         </ul>
     @endif
 
-    <main>
+    <main class="container py-4">
         @yield('conteudo')
     </main>
 </body>
