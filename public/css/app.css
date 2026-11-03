@@ -1,0 +1,63 @@
+/* Identidade visual da Baha Lanches: cores e fonte */
+
+:root {
+    --baha-primary: #e8590c;
+    --baha-primary-dark: #c74a08;
+    --baha-primary-darker: #a43c06;
+    --baha-dark: #2b1d16;
+
+    --bs-primary: #e8590c;
+    --bs-primary-rgb: 232, 89, 12;
+    --bs-light-rgb: 253, 246, 238;
+    --bs-link-color: #c74a08;
+    --bs-link-color-rgb: 199, 74, 8;
+    --bs-link-hover-color: #a43c06;
+    --bs-link-hover-color-rgb: 164, 60, 6;
+    --bs-body-font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --bs-border-radius: 0.6rem;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--baha-primary);
+    --bs-btn-border-color: var(--baha-primary);
+    --bs-btn-hover-bg: var(--baha-primary-dark);
+    --bs-btn-hover-border-color: var(--baha-primary-dark);
+    --bs-btn-active-bg: var(--baha-primary-darker);
+    --bs-btn-active-border-color: var(--baha-primary-darker);
+    --bs-btn-disabled-bg: var(--baha-primary);
+    --bs-btn-disabled-border-color: var(--baha-primary);
+    --bs-btn-focus-shadow-rgb: 232, 89, 12;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--baha-primary-dark);
+    --bs-btn-border-color: var(--baha-primary);
+    --bs-btn-hover-bg: var(--baha-primary);
+    --bs-btn-hover-border-color: var(--baha-primary);
+    --bs-btn-active-bg: var(--baha-primary-dark);
+    --bs-btn-active-border-color: var(--baha-primary-dark);
+    --bs-btn-disabled-color: var(--baha-primary);
+    --bs-btn-disabled-border-color: var(--baha-primary);
+    --bs-btn-focus-shadow-rgb: 232, 89, 12;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: #f3a273;
+    box-shadow: 0 0 0 0.25rem rgba(232, 89, 12, 0.2);
+}
+
+.form-check-input:checked {
+    background-color: var(--baha-primary);
+    border-color: var(--baha-primary);
+}
+
+.pagination {
+    --bs-pagination-color: var(--baha-primary-dark);
+    --bs-pagination-hover-color: var(--baha-primary-darker);
+    --bs-pagination-focus-color: var(--baha-primary-darker);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(232, 89, 12, 0.2);
+    --bs-pagination-active-bg: var(--baha-primary);
+    --bs-pagination-active-border-color: var(--baha-primary);
+}
