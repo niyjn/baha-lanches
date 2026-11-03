@@ -3,13 +3,17 @@
 @section('titulo', 'Novo pedido')
 
 @section('conteudo')
-    <h1>Novo pedido</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Novo pedido</h1>
+        <a class="btn btn-outline-secondary" href="{{ route('pedidos.index') }}">Voltar</a>
+    </div>
 
-    <form method="POST" action="{{ route('pedidos.store') }}">
+    <form method="POST" action="{{ route('pedidos.store') }}" style="max-width: 800px">
         @csrf
 
-        <label>Cliente e endereço de entrega
-            <select name="endereco_id" required>
+        <div class="bg-white border rounded p-4 mb-3">
+            <label class="form-label" for="endereco_id">Cliente e endereço de entrega</label>
+            <select class="form-select" id="endereco_id" name="endereco_id" required>
                 <option value="">Selecione</option>
                 @foreach ($enderecos as $endereco)
                     <option value="{{ $endereco->id }}" @selected(old('endereco_id') == $endereco->id)>
@@ -17,36 +21,48 @@
                     </option>
                 @endforeach
             </select>
-        </label>
+        </div>
 
-        @foreach (range(0, 2) as $i)
-            <fieldset>
-                <legend>Item {{ $i + 1 }}</legend>
-                <label>Produto
-                    <select name="itens[{{ $i }}][produto_id]">
-                        <option value="">Nenhum</option>
-                        @foreach ($produtos as $produto)
-                            <option value="{{ $produto->id }}" @selected(old("itens.$i.produto_id") == $produto->id)>{{ $produto->nome }} - R$ {{ number_format($produto->preco, 2, ',', '.') }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label>Quantidade <input type="number" min="1" name="itens[{{ $i }}][quantidade]" value="{{ old("itens.$i.quantidade", 1) }}"></label>
-                <label>Observação <input name="itens[{{ $i }}][observacao]" value="{{ old("itens.$i.observacao") }}" maxlength="200"></label>
-                <label>Adicional
-                    <select name="itens[{{ $i }}][adicionais][0][ingrediente_id]">
-                        <option value="">Nenhum</option>
-                        @foreach ($ingredientes as $ingrediente)
-                            <option value="{{ $ingrediente->id }}" @selected(old("itens.$i.adicionais.0.ingrediente_id") == $ingrediente->id)>{{ $ingrediente->nome }} - R$ {{ number_format($ingrediente->preco_adicional, 2, ',', '.') }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label>Quantidade do adicional <input type="number" min="1" name="itens[{{ $i }}][adicionais][0][quantidade]" value="{{ old("itens.$i.adicionais.0.quantidade", 1) }}"></label>
-            </fieldset>
-        @endforeach
+        <h2 class="h5">Itens</h2>
+        @php $itensAntigos = old('itens') ?: [[]]; @endphp
+        <div id="itens">
+            @foreach ($itensAntigos as $i => $item)
+                @include('pedidos._item', ['i' => $i, 'item' => $item])
+            @endforeach
+        </div>
+        <button type="button" id="adicionar-item" class="btn btn-outline-primary mb-4">+ Adicionar item</button>
 
-        <label>Cupom <input name="codigo_cupom" value="{{ old('codigo_cupom') }}" maxlength="30"></label>
-        <label>Observações <textarea name="observacoes">{{ old('observacoes') }}</textarea></label>
+        <div class="bg-white border rounded p-4 mb-3">
+            <div class="mb-3">
+                <label class="form-label" for="codigo_cupom">Cupom</label>
+                <input class="form-control" id="codigo_cupom" name="codigo_cupom" value="{{ old('codigo_cupom') }}" maxlength="30">
+            </div>
+            <div>
+                <label class="form-label" for="observacoes">Observações</label>
+                <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ old('observacoes') }}</textarea>
+            </div>
+        </div>
 
-        <button type="submit">Criar pedido</button>
+        <button type="submit" class="btn btn-primary">Criar pedido</button>
     </form>
+
+    <template id="modelo-item">
+        @include('pedidos._item', ['i' => '__INDEX__', 'item' => []])
+    </template>
+
+    <script>
+        const lista = document.getElementById('itens');
+        const modelo = document.getElementById('modelo-item');
+        let proximo = lista.querySelectorAll('.item-pedido').length;
+
+        document.getElementById('adicionar-item').addEventListener('click', () => {
+            lista.insertAdjacentHTML('beforeend', modelo.innerHTML.replaceAll('__INDEX__', proximo++));
+        });
+
+        lista.addEventListener('click', (evento) => {
+            if (evento.target.classList.contains('remover-item')) {
+                evento.target.closest('.item-pedido').remove();
+            }
+        });
+    </script>
 @endsection
