@@ -20,23 +20,25 @@
         </div>
     </nav>
 
-    @if (session('sucesso'))
-        <p role="status">{{ session('sucesso') }}</p>
-    @endif
-
-    @if (session('erro'))
-        <p role="alert">{{ session('erro') }}</p>
-    @endif
-
-    @if ($errors->any())
-        <ul role="alert">
-            @foreach ($errors->all() as $erro)
-                <li>{{ $erro }}</li>
-            @endforeach
-        </ul>
-    @endif
-
     <main class="container py-4">
+        @if (session('sucesso'))
+            <div class="alert alert-success" role="status">{{ session('sucesso') }}</div>
+        @endif
+
+        @if (session('erro'))
+            <div class="alert alert-danger" role="alert">{{ session('erro') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $erro)
+                        <li>{{ $erro }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         @yield('conteudo')
     </main>
 </body>
