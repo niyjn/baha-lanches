@@ -3,13 +3,34 @@
 @section('titulo', $produto->nome)
 
 @section('conteudo')
-    <h1>{{ $produto->nome }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">{{ $produto->nome }}</h1>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="{{ route('produtos.index') }}">Voltar</a>
+            <a class="btn btn-primary" href="{{ route('produtos.edit', $produto) }}">Editar</a>
+        </div>
+    </div>
 
-    <p>Categoria: {{ $produto->categoria->nome }}</p>
-    <p>Descrição: {{ $produto->descricao }}</p>
-    <p>Preço: R$ {{ number_format($produto->preco, 2, ',', '.') }}</p>
-    <p>Custo de produção: R$ {{ number_format($produto->custo_producao, 2, ',', '.') }}</p>
-    <p>Disponível: {{ $produto->disponivel ? 'Sim' : 'Não' }}</p>
+    <div class="card">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Categoria</dt>
+                <dd class="col-sm-9">{{ $produto->categoria->nome }}</dd>
 
-    <a href="{{ route('produtos.edit', $produto) }}">Editar</a>
+                <dt class="col-sm-3">Descrição</dt>
+                <dd class="col-sm-9">{{ $produto->descricao }}</dd>
+
+                <dt class="col-sm-3">Preço</dt>
+                <dd class="col-sm-9">R$ {{ number_format($produto->preco, 2, ',', '.') }}</dd>
+
+                <dt class="col-sm-3">Custo de produção</dt>
+                <dd class="col-sm-9">R$ {{ number_format($produto->custo_producao, 2, ',', '.') }}</dd>
+
+                <dt class="col-sm-3">Disponível</dt>
+                <dd class="col-sm-9 mb-0">
+                    <span class="badge {{ $produto->disponivel ? 'text-bg-success' : 'text-bg-secondary' }}">{{ $produto->disponivel ? 'Sim' : 'Não' }}</span>
+                </dd>
+            </dl>
+        </div>
+    </div>
 @endsection

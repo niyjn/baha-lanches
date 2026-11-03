@@ -3,10 +3,12 @@
 @section('titulo', 'Categorias')
 
 @section('conteudo')
-    <h1>Categorias</h1>
-    <a href="{{ route('categorias.create') }}">Nova categoria</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Categorias</h1>
+        <a class="btn btn-primary" href="{{ route('categorias.create') }}">Nova categoria</a>
+    </div>
 
-    <table>
+    <table class="table table-striped table-hover align-middle bg-white">
         <thead>
             <tr><th>Ordem</th><th>Nome</th><th>Ativa</th><th>Ações</th></tr>
         </thead>
@@ -17,12 +19,14 @@
                     <td>{{ $categoria->nome }}</td>
                     <td>{{ $categoria->ativo ? 'Sim' : 'Não' }}</td>
                     <td>
-                        <a href="{{ route('categorias.edit', $categoria) }}">Editar</a>
-                        <form method="POST" action="{{ route('categorias.destroy', $categoria) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit">Excluir</button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('categorias.edit', $categoria) }}">Editar</a>
+                            <form method="POST" action="{{ route('categorias.destroy', $categoria) }}" onsubmit="return confirm('Excluir esta categoria?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             @endforeach

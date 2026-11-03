@@ -3,10 +3,12 @@
 @section('titulo', 'Clientes')
 
 @section('conteudo')
-    <h1>Clientes</h1>
-    <a href="{{ route('clientes.create') }}">Novo cliente</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Clientes</h1>
+        <a class="btn btn-primary" href="{{ route('clientes.create') }}">Novo cliente</a>
+    </div>
 
-    <table>
+    <table class="table table-striped table-hover align-middle bg-white">
         <thead>
             <tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Ativo</th><th>Ações</th></tr>
         </thead>
@@ -18,12 +20,14 @@
                     <td>{{ $cliente->telefone }}</td>
                     <td>{{ $cliente->ativo ? 'Sim' : 'Não' }}</td>
                     <td>
-                        <a href="{{ route('clientes.edit', $cliente) }}">Editar</a>
-                        <form method="POST" action="{{ route('clientes.destroy', $cliente) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit">Excluir</button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('clientes.edit', $cliente) }}">Editar</a>
+                            <form method="POST" action="{{ route('clientes.destroy', $cliente) }}" onsubmit="return confirm('Excluir este cliente?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             @endforeach
