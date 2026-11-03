@@ -3,10 +3,12 @@
 @section('titulo', 'Categorias')
 
 @section('conteudo')
-    <h1>Categorias</h1>
-    <a href="{{ route('categorias.create') }}">Nova categoria</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Categorias</h1>
+        <a class="btn btn-primary" href="{{ route('categorias.create') }}">Nova categoria</a>
+    </div>
 
-    <table>
+    <table class="table table-striped table-hover align-middle bg-white">
         <thead>
             <tr><th>Ordem</th><th>Nome</th><th>Ativa</th><th>Ações</th></tr>
         </thead>

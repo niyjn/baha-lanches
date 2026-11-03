@@ -3,10 +3,12 @@
 @section('titulo', 'Clientes')
 
 @section('conteudo')
-    <h1>Clientes</h1>
-    <a href="{{ route('clientes.create') }}">Novo cliente</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Clientes</h1>
+        <a class="btn btn-primary" href="{{ route('clientes.create') }}">Novo cliente</a>
+    </div>
 
-    <table>
+     <table class="table table-striped table-hover align-middle bg-white">
         <thead>
             <tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Ativo</th><th>Ações</th></tr>
         </thead>
