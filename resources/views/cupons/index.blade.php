@@ -23,12 +23,14 @@
                     <td>{{ $cupom->limite_usos }}</td>
                     <td>{{ $cupom->ativo ? 'Sim' : 'Não' }}</td>
                     <td>
-                        <a href="{{ route('cupons.edit', $cupom) }}">Editar</a>
-                        <form method="POST" action="{{ route('cupons.destroy', $cupom) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit">Excluir</button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('cupons.edit', $cupom) }}">Editar</a>
+                            <form method="POST" action="{{ route('cupons.destroy', $cupom) }}" onsubmit="return confirm('Excluir este cupom?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             @endforeach
