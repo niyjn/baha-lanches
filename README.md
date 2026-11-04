@@ -1,6 +1,6 @@
 # Baha Lanches
 
-Sistema de pedidos de uma lanchonete, feito com Laravel e PostgreSQL (Neon).
+Sistema de pedidos de uma lanchonete, feito com Laravel e PostgreSQL (Neon). Ver `docs/` para aprofundamento.
 
 ## Como executar
 
